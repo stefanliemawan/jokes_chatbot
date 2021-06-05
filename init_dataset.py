@@ -37,14 +37,14 @@ data["category"].replace("State Jokes", "State", inplace=True)
 data["category"].replace("Yo Mama", "Yo Momma", inplace=True)
 
 data.dropna(inplace=True)
-data = shuffle(data)
+data.sort_values("category", inplace=True)
 data.to_csv("./dataset/wocka-stupidstuff.csv", encoding="utf-8", index=False)
 print(data)
 
 # categories = data["category"].unique()
 # categories = pd.Series(categories)
 stats = pd.DataFrame(
-    {"category": data["category"], "hilarious": 0, "funny": 0, "normal": 0, "bad":0,"horrible": 0})
+    {"category": data["category"], "hilarious": 0, "funny": 0, "normal": 0, "bad": 0, "horrible": 0})
 stats.drop_duplicates("category", inplace=True)
 stats.sort_values("category", inplace=True)
 stats.to_csv("./dataset/ws-stats.csv", index=False)
