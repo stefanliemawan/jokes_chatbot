@@ -6,47 +6,51 @@ import os
 # pd.set_option('display.max_colwidth', None)
 
 
-def calculatePercentage():
-    score = 1 * stats.hilarious + 0.8 * stats.funny + 0.6 * stats.normal + 0.4 * stats.bad + \
-        0.2 * stats.horrible / stats.hilarious + stats.funny + \
-        stats.normal + stats.bad + stats.horrible
-    stats["score"] = score
-
-
 users = os.listdir("./stats")
 print("Users found", users)
 
-print("\nNew user or old user? (new/old)")
-newold = input()
+print("Type in a username")
+user = input()
 
-if newold == "new":
-    print("Type in a username for your new user")
-    user = input()
-elif newold == "old":
-    print("Type in your username")
-    user = input()
-
-print("\nHello, ", user, "\n")
+print("\nHello,", user, "\n")
+if user not in users:
+    os.mkdir(f"./stats/{user}")
 
 try:
-    jokes = pd.read_csv(f"./stats/{user}/user1-remaining-jokes.csv",
+    jokes = pd.read_csv(f"./stats/{user}/{user}-remaining-jokes.csv",
                         escapechar='\\').reset_index(drop=True)
     stats = pd.read_csv(
-        f"./stats/{user}/user1-stats.csv").reset_index(drop=True)
+        f"./stats/{user}/{user}-stats.csv").reset_index(drop=True)
 except:
     print("No saved stats found for your user, using zero preferences...\n")
     jokes = pd.read_csv("./dataset/wocka-stupidstuff.csv",
                         escapechar='\\').reset_index(drop=True)
     stats = pd.read_csv("./dataset/ws-stats.csv").reset_index(drop=True)
-    calculatePercentage()
+
+
+def calculatePercentage():
+    n = stats.hilarious + stats.funny + stats.normal + stats.bad + stats.horrible
+    n[n == 0] = 1
+    score = 1 * stats.hilarious + 0.8 * stats.funny + 0.6 * \
+        stats.normal + 0.4 * stats.bad + 0.2 * stats.horrible / n
+    score[score == 0] = 1/len(score)
+    stats["score"] = score
+
+
+calculatePercentage()
 
 while True:
     print("Jokes? (y/n)")
     ans = input()
     if ans == "y":
         categories = stats["category"]
+        print(stats["score"])
+        print(stats["score"].sum())
         probs = stats["score"]/stats["score"].sum()
+        print(categories)
+        print(probs)
         category = choices(categories, probs)[0]
+        print(category)
         print("\nChosen category -->", category)
 
         chosen = jokes[jokes.category == category]
@@ -79,7 +83,7 @@ while True:
             stats.loc[stats["category"] == category, rev] += 1
         else:
             print(
-                "\nWhat's that? I see... \nYou don't like personalized stuff, do you?\nVery well, then\n")  # something better
+                "\nWhat's that? I see... \nYou don't like personalized stuff, do you?\nVery well, then\n")
 
     elif ans == "n":
         break
@@ -88,6 +92,6 @@ while True:
 calculatePercentage()
 
 print("Saving your jokes preferences...")
-jokes.to_csv("./stats/user1-remaining-jokes.csv", index=False)
-stats.to_csv("./stats/user1-stats.csv", index=False)
+jokes.to_csv(f"./stats/{user}/{user}-remaining-jokes.csv", index=False)
+stats.to_csv(f"./stats/{user}/{user}-stats.csv", index=False)
 print("Done")
