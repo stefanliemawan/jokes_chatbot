@@ -11,9 +11,9 @@ import os
 users = os.listdir("./stats")
 print("Users found", users)
 
-# print("Type in a username")
+# print("\nType in a username\n")
 # user = input()
-user = "test"
+user = "user1"
 
 if user not in users:
     os.mkdir(f"./stats/{user}")
@@ -24,7 +24,7 @@ try:
     stats = pd.read_csv(
         f"./stats/{user}/{user}-stats.csv").reset_index(drop=True)
 except:
-    print("No saved stats found for your user, using zero preferences...\n")
+    print("\nNo saved stats found for your user, using zero preferences...")
     jokes = pd.read_csv("./dataset/wocka-stupidstuff.csv",
                         escapechar='\\').reset_index(drop=True)
     stats = pd.read_csv("./dataset/ws-stats.csv").reset_index(drop=True)
@@ -36,11 +36,17 @@ jokes.dropna(inplace=True)
 def calculatePercentage(stats):
     n = stats.hilarious + stats.funny + stats.normal + stats.bad + stats.horrible
     n[n == 0] = 1
-    score = 1 * stats.hilarious + 0.8 * stats.funny + 0.6 * \
-        stats.normal + 0.4 * stats.bad + 0.2 * stats.horrible / n
-    score[score == 0] = 1/len(score)
+    probs = 1/len(stats)
+    hilarious = (probs * stats.hilarious) * 1.5
+    funny = (probs * stats.funny) * 1
+    normal = (probs * stats.normal) * 0
+    bad = (probs * stats.bad) * 1
+    horrible = (probs * stats.horrible) * 1.5
+    score = probs + ((hilarious + funny + normal - bad - horrible))
+    print(score.sum())
     stats["score"] = score
     return stats
+    # likelihood?
 
 
 def returnJokeBasedOnCategory(jokes, category):
@@ -51,7 +57,7 @@ def returnJokeBasedOnCategory(jokes, category):
 
 
 def handleFeedback(stats, category):
-    print("How's the joke? (hilarious/funny/normal/bad/horrible)")
+    print("How's the joke? (hilarious/funny/normal/bad/horrible)\n")
     rev = input()
 
     if rev == "hilarious":
@@ -85,17 +91,29 @@ def handleJoke(jokes, joke):
     return jokes
 
 
-stats = calculatePercentage(stats)
+def printInstructions():
+    print("---------------------------------------------")
+    print("Type 'joke' for any random joke")
+    print("Type 'categories' print every available categories")
+    print("Type in any category you want for a joke specific to that category")
+    print("Type 'search <keyword>' to return one joke based on that keyword")
+    print("Type 'help' to print this instruction again")
+    print("---------------------------------------------\n")
 
 
 print("\nHello,", user, "\n")
-print("Welcome to blahblah chatbot")
+print("My name is Joky")
+print("I am here to give you jokes and lighten your day")
+print("Your feedbacks on the the jokes will enhance my ability to personalize future jokes to your liking based on its category\n")
+printInstructions()
 
 categories = stats["category"]
 bodies = jokes["body"]
 
+
 while True:
-    print("What can I do for you?")
+    stats = calculatePercentage(stats)
+    print("What can I do for you?\n")
     ans = input().title()
     if ans == "Joke":
         probs = stats["score"]/stats["score"].sum()
@@ -121,10 +139,17 @@ while True:
             stats = handleFeedback(stats, category)
         else:
             print("\nKeyword not found\n")
+    elif ans == "Categories":
+        print(categories)
+    elif ans == "Help":
+        printInstructions()
+    elif ans == "Stats":
+        print(stats, "\n")
     elif ans == "Exit":
-        # print("\nWhat do you want from me then?\n")
-        print("Boo\n")
+        print("\nBoo\n")
         break
+    else:
+        print("\nI don't have the answer for that\n")
 
 
 stats = calculatePercentage(stats)

@@ -9,7 +9,9 @@ stupidstuff = pd.read_json("./joke-dataset-master/stupidstuff.json")
 stupidstuff.drop(["id", "rating"], axis=1, inplace=True)
 # print(stupidstuff)
 
-data = pd.concat([wocka, stupidstuff]).reset_index(drop=True)
+dadjokes = pd.read_csv("./crawled/dadjokes.csv").reset_index(drop=True)
+
+data = pd.concat([wocka, stupidstuff, dadjokes]).reset_index(drop=True)
 
 data["category"].replace("Animals", "Animal", inplace=True)
 data["category"].replace("Bar Jokes", "Bar", inplace=True)

@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import numpy as np
+import pandas as pd
 import urllib.request
 import requests
 
@@ -19,4 +20,7 @@ for t in tags:
 
 print(dadjokes)
 
-np.savetxt("dadjokes.txt", np.array(dadjokes), fmt="%s")
+dj = pd.DataFrame({"body": dadjokes, "category": "Dad Joke"})
+print(dj)
+
+dj.to_csv("./crawled/dadjokes.csv", index=False)
