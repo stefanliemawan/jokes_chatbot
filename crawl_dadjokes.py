@@ -20,7 +20,7 @@ for t in tags:
 
 print(dadjokes)
 
-dj = pd.DataFrame({"body": dadjokes, "category": "Dad Joke"})
+dj = pd.DataFrame({"body": dadjokes, "category": "Dad"})
 print(dj)
 
 dj.to_csv("./crawled/dadjokes.csv", index=False)

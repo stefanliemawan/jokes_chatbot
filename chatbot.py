@@ -43,8 +43,8 @@ def calculatePercentage(stats):
     bad = (probs * stats.bad) * 1
     horrible = (probs * stats.horrible) * 1.5
     score = probs + ((hilarious + funny + normal - bad - horrible))
-    print(score.sum())
     stats["score"] = score
+    stats.loc[stats.score < probs, "score"] = probs
     return stats
     # likelihood?
 
@@ -91,12 +91,16 @@ def handleJoke(jokes, joke):
     return jokes
 
 
+def containsWord(word, sentence):
+    return f" {word} " in f" {sentence} "
+
+
 def printInstructions():
     print("---------------------------------------------")
-    print("Type 'joke' for any random joke")
-    print("Type 'categories' print every available categories")
-    print("Type in any category you want for a joke specific to that category")
+    print("Ask me for a joke or any particular category you want to include")
     print("Type 'search <keyword>' to return one joke based on that keyword")
+    print("Type 'categories' print every available categories")
+    print("Type 'stats' to view your stats and jokes preferences")
     print("Type 'help' to print this instruction again")
     print("---------------------------------------------\n")
 
@@ -114,24 +118,26 @@ bodies = jokes["body"]
 while True:
     stats = calculatePercentage(stats)
     print("What can I do for you?\n")
-    ans = input().title()
-    if ans == "Joke":
-        probs = stats["score"]/stats["score"].sum()
-        category = choices(categories, probs)[0]
-        print("\nChosen category -->", category)
-        joke = returnJokeBasedOnCategory(jokes, category)
-        jokes = handleJoke(jokes, joke)
-        stats = handleFeedback(stats, category)
-    elif categories.str.contains(ans).any():
-        category = ans
-        print("\nChosen category -->", category)
-        joke = returnJokeBasedOnCategory(jokes, category)
-        jokes = handleJoke(jokes, joke)
-        stats = handleFeedback(stats, category)
-    elif ans.startswith("Search"):
-        keyword = ans.split()[1].lower()
-        if bodies.str.contains(keyword).any():
-            chosen = jokes[bodies.str.contains(keyword)]
+    ans = input()
+    category_keyword = ans.title().split()
+    category_keyword = [s for s in category_keyword if len(s) > 2]
+    category_keyword = "|".join(category_keyword)
+    if categories.str.contains(category_keyword).any():
+        category = categories.loc[categories.str.contains(
+            category_keyword) == True].values
+        if len(category) == 0:
+            print("I'm afraid I do not have any joke about that particular category\n")
+        else:
+            print(category)
+            category = category[0]
+            print("\nChosen category -->", category)
+            joke = returnJokeBasedOnCategory(jokes, category)
+            jokes = handleJoke(jokes, joke)
+            stats = handleFeedback(stats, category)
+    elif ans.startswith("search"):
+        search_keyword = ans.split()[1]
+        if bodies.str.contains(search_keyword).any():
+            chosen = jokes[bodies.str.contains(search_keyword)]
             rand = randint(len(chosen))
             joke = chosen.iloc[rand]["body"]
             category = chosen.iloc[rand]["category"]
@@ -139,13 +145,20 @@ while True:
             stats = handleFeedback(stats, category)
         else:
             print("\nKeyword not found\n")
-    elif ans == "Categories":
+    elif containsWord("joke", ans) or containsWord("joke?", ans):
+        probs = stats["score"]/stats["score"].sum()
+        category = choices(categories, probs)[0]
+        print("\nChosen category -->", category)
+        joke = returnJokeBasedOnCategory(jokes, category)
+        jokes = handleJoke(jokes, joke)
+        stats = handleFeedback(stats, category)
+    elif ans == "categories":
         print(categories)
-    elif ans == "Help":
+    elif ans == "help":
         printInstructions()
-    elif ans == "Stats":
+    elif ans == "stats":
         print(stats, "\n")
-    elif ans == "Exit":
+    elif ans == "exit":
         print("\nBoo\n")
         break
     else:
