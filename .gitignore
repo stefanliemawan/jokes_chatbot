@@ -2,3 +2,4 @@ dataset/*
 !dataset/wocka-stupidstuff.csv
 joke-dataset-master
 stats/*
+crawled/*

@@ -2,10 +2,10 @@ from numpy.random import randint
 import pandas as pd
 from random import choices
 import os
+import time
+import sys
 
 # pd.set_option('display.max_colwidth', None)
-
-# keyword?
 
 
 users = os.listdir("./stats")
@@ -46,12 +46,11 @@ def calculatePercentage(stats):
     stats["score"] = score
     stats.loc[stats.score < probs, "score"] = probs
     return stats
-    # likelihood?
 
 
 def returnJokeBasedOnCategory(jokes, category):
     chosen = jokes[jokes.category == category]
-    rand = randint(len(chosen))
+    rand = randint(0, len(chosen))
     joke = chosen.iloc[rand]["body"]
     return joke
 
@@ -61,19 +60,34 @@ def handleFeedback(stats, category):
     rev = input()
 
     if rev == "hilarious":
-        print("\nAlways knew you have a good sense of humour\n")
+        strings = [
+            "\nAlways knew you have a good sense of humour\n", "\nMy Boy!\n"]
+        rand = randint(0, len(strings))
+        print(strings[rand])
         stats.loc[stats["category"] == category, rev] += 1
     elif rev == "funny":
-        print("\nLOL LMAO\n")
+        strings = ["\nLOL LMAO\n",
+                   "\nI am starting to like you more and more\n"]
+        rand = randint(0, len(strings))
+        print(strings[rand])
         stats.loc[stats["category"] == category, rev] += 1
     elif rev == "normal":
-        print("\nAlrighty then!\n")
+        strings = ["\nAlrighty then!\n",
+                   "\nThat's not bad I suppose\n", "\nMeh, Fine\n"]
+        rand = randint(0, len(strings))
+        print(strings[rand])
         stats.loc[stats["category"] == category, rev] += 1
     elif rev == "bad":
-        print("\nAh, you're just shit\n")
+        strings = ["\nAh, you're just shit\n",
+                   "\nSeriously?\n", "\nNo, you're bad\n"]
+        rand = randint(0, len(strings))
+        print(strings[rand])
         stats.loc[stats["category"] == category, rev] += 1
     elif rev == "horrible":
-        print("\nHAHAHAHAHA (laughing sarcastically)\n")
+        strings = ["\nHAHAHAHAHA (laughing sarcastically)\n",
+                   "\nYou and your shit humour sense (chuckle)\n", "\nYou disappoint me\n"]
+        rand = randint(0, len(strings))
+        print(strings[rand])
         stats.loc[stats["category"] == category, rev] += 1
     else:
         print(
@@ -83,7 +97,10 @@ def handleFeedback(stats, category):
 
 def handleJoke(jokes, joke):
     print("\n--------------------------------------------------------\n")
-    print(joke)
+    for l in joke:
+        sys.stdout.write(l)
+        sys.stdout.flush()
+        time.sleep(0.05)
     print("\n--------------------------------------------------------\n")
 
     jokes = jokes[jokes.body != joke]
@@ -101,12 +118,13 @@ def printInstructions():
     print("Type 'search <keyword>' to return one joke based on that keyword")
     print("Type 'categories' print every available categories")
     print("Type 'stats' to view your stats and jokes preferences")
+    print("Type 'reset stats' to reset your preferences")
     print("Type 'help' to print this instruction again")
     print("---------------------------------------------\n")
 
 
 print("\nHello,", user, "\n")
-print("My name is Joky")
+print("My name is Jokybo")
 print("I am here to give you jokes and lighten your day")
 print("Your feedbacks on the the jokes will enhance my ability to personalize future jokes to your liking based on its category\n")
 printInstructions()
@@ -123,22 +141,25 @@ while True:
     category_keyword = [s for s in category_keyword if len(s) > 2]
     category_keyword = "|".join(category_keyword)
     if categories.str.contains(category_keyword).any():
-        category = categories.loc[categories.str.contains(
-            category_keyword) == True].values
-        if len(category) == 0:
+        if len(category_keyword) == 0:
             print("I'm afraid I do not have any joke about that particular category\n")
         else:
-            print(category)
+            category = categories.loc[categories.str.contains(
+                category_keyword) == True].values
+            print("\nMatched Category: ", category)
             category = category[0]
+            time.sleep(1)
             print("\nChosen category -->", category)
             joke = returnJokeBasedOnCategory(jokes, category)
             jokes = handleJoke(jokes, joke)
             stats = handleFeedback(stats, category)
     elif ans.startswith("search"):
         search_keyword = ans.split()[1]
+        print("Searching for '", search_keyword, "'")
+        time.sleep(1)
         if bodies.str.contains(search_keyword).any():
             chosen = jokes[bodies.str.contains(search_keyword)]
-            rand = randint(len(chosen))
+            rand = randint(0, len(chosen))
             joke = chosen.iloc[rand]["body"]
             category = chosen.iloc[rand]["category"]
             jokes = handleJoke(jokes, joke)
@@ -146,8 +167,10 @@ while True:
         else:
             print("\nKeyword not found\n")
     elif containsWord("joke", ans) or containsWord("joke?", ans):
+        print("\nOne hilarious joke, coming right away")
         probs = stats["score"]/stats["score"].sum()
         category = choices(categories, probs)[0]
+        time.sleep(1)
         print("\nChosen category -->", category)
         joke = returnJokeBasedOnCategory(jokes, category)
         jokes = handleJoke(jokes, joke)
@@ -158,11 +181,28 @@ while True:
         printInstructions()
     elif ans == "stats":
         print(stats, "\n")
+    elif ans == "reset stats":
+        stats[["hilarious", "funny", "normal", "bad", "horrible"]] = 0
+        print("\nStats reset done\n")
+    elif containsWord("hey", ans.lower()) or containsWord("hello", ans.lower()) or containsWord("hi", ans.lower()) or containsWord("greetings", ans.lower()):
+        print("\nGreetings, ", user)
+        time.sleep(1)
+        print("Are you ready for the best joke of your life?\n")
+        time.sleep(1)
+        print("Go on, ask me for a joke\n")
+    elif containsWord("jokybo", ans.lower()):
+        print("\nDid you call my name?")
+        time.sleep(1)
+        print("Nobody has ever called me by my name in such a long time...")
+        time.sleep(1)
+        print("Just kidding :)")
+        time.sleep(1)
+        print("Or am I?\n")
     elif ans == "exit":
         print("\nBoo\n")
         break
     else:
-        print("\nI don't have the answer for that\n")
+        print("\nI don't have the answer for that, unfortunately\n")
 
 
 stats = calculatePercentage(stats)
