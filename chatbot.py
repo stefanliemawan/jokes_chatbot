@@ -14,9 +14,9 @@ import re
 users = os.listdir("./stats")
 print("Users found", users)
 
-# print("\nType in a username\n")
-# user = input()
-user = "user1"
+print("\nType in a username\n")
+user = input()
+# user = "user1"
 
 if user not in users:
     os.mkdir(f"./stats/{user}")
@@ -145,7 +145,7 @@ def searchOnline(keyword):
         desc = re.sub(r"\[[^[]]*\]", "", desc)
         typeAnimation(desc, 0.01)
         time.sleep(t_sleep)
-        print("\nThat's all that I know. :)\n")
+        print("\n\nThat's all that I know. :)\n")
     except:
         time.sleep(t_sleep)
         print("\nI could not find anything about that, sorry mate :(\n")
