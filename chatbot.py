@@ -4,6 +4,9 @@ from random import choices
 import os
 import time
 import sys
+from bs4 import BeautifulSoup
+import requests
+import re
 
 # pd.set_option('display.max_colwidth', None)
 
@@ -33,26 +36,33 @@ except:
 jokes.dropna(inplace=True)
 
 
+def typeAnimation(text, t):
+    print()
+    for l in text:
+        sys.stdout.write(l)
+        sys.stdout.flush()
+        time.sleep(t)
+
+
 def calculatePercentage(stats):
     n = stats.hilarious + stats.funny + stats.normal + stats.bad + stats.horrible
     n[n == 0] = 1
-    probs = 1/len(stats)
-    hilarious = (probs * stats.hilarious) * 1.5
-    funny = (probs * stats.funny) * 1
-    normal = (probs * stats.normal) * 0
-    bad = (probs * stats.bad) * 1
-    horrible = (probs * stats.horrible) * 1.5
-    score = probs + ((hilarious + funny + normal - bad - horrible))
+    score = ((1.5 * stats.hilarious + 1 * stats.funny +
+              0.5 * stats.normal - 1 * stats.bad - 1.5 * stats.horrible)/5)
     stats["score"] = score
-    stats.loc[stats.score < probs, "score"] = probs
+    stats.loc[stats.score < 1, "score"] = 1
     return stats
 
 
 def returnJokeBasedOnCategory(jokes, category):
     chosen = jokes[jokes.category == category]
-    rand = randint(0, len(chosen))
-    joke = chosen.iloc[rand]["body"]
-    return joke
+    if len(chosen) == 0:
+        print("No more joke in this category, moving on\n")
+        return
+    else:
+        rand = randint(0, len(chosen))
+        joke = chosen.iloc[rand]["body"]
+        return joke
 
 
 def handleFeedback(stats, category):
@@ -96,12 +106,9 @@ def handleFeedback(stats, category):
 
 
 def handleJoke(jokes, joke):
-    print("\n--------------------------------------------------------\n")
-    for l in joke:
-        sys.stdout.write(l)
-        sys.stdout.flush()
-        time.sleep(0.05)
-    print("\n--------------------------------------------------------\n")
+    print("\n--------------------------------------------------------")
+    typeAnimation(joke, 0.05)
+    print("\n\n--------------------------------------------------------\n")
 
     jokes = jokes[jokes.body != joke]
     print(len(jokes), "Jokes remaining\n")
@@ -115,12 +122,34 @@ def containsWord(word, sentence):
 def printInstructions():
     print("---------------------------------------------")
     print("Ask me for a joke or any particular category you want to include")
+    print("Ask me with the keyword 'about' to get information regarding anything")
     print("Type 'search <keyword>' to return one joke based on that keyword")
     print("Type 'categories' print every available categories")
     print("Type 'stats' to view your stats and jokes preferences")
     print("Type 'reset stats' to reset your preferences")
     print("Type 'help' to print this instruction again")
+    print("Or you can simply say hi to me :)")
     print("---------------------------------------------\n")
+
+
+def searchOnline(keyword):
+    url = "https://en.wikipedia.org/wiki/" + keyword
+    webpage = requests.get(url)
+    soup = BeautifulSoup(webpage.text, "html.parser")
+    tags = soup.find("div", attrs={"class": "mw-parser-output"})
+    try:
+        for t in tags.findAll("p"):
+            if len(t.text) > 30:
+                desc = t.text.strip()
+                break
+        desc = re.sub(r"\[[^[]]*\]", "", desc)
+        typeAnimation(desc, 0.01)
+        time.sleep(t_sleep)
+        print("\nThat's all that I know. :)\n")
+    except:
+        time.sleep(t_sleep)
+        print("\nI could not find anything about that, sorry mate :(\n")
+    return
 
 
 print("\nHello,", user, "\n")
@@ -133,14 +162,20 @@ categories = stats["category"]
 bodies = jokes["body"]
 
 
+t_sleep = 1
+
 while True:
     stats = calculatePercentage(stats)
+    time.sleep(0.5)
     print("What can I do for you?\n")
     ans = input()
     category_keyword = ans.title().split()
     category_keyword = [s for s in category_keyword if len(s) > 2]
     category_keyword = "|".join(category_keyword)
-    if categories.str.contains(category_keyword).any():
+    if containsWord("do you know about", ans.lower()) or containsWord("tell me about", ans.lower()):
+        keyword = ans.split("about ")[1]
+        searchOnline(keyword)
+    elif categories.str.contains(category_keyword).any():
         if len(category_keyword) == 0:
             print("I'm afraid I do not have any joke about that particular category\n")
         else:
@@ -148,7 +183,7 @@ while True:
                 category_keyword) == True].values
             print("\nMatched Category: ", category)
             category = category[0]
-            time.sleep(1)
+            time.sleep(t_sleep)
             print("\nChosen category -->", category)
             joke = returnJokeBasedOnCategory(jokes, category)
             jokes = handleJoke(jokes, joke)
@@ -156,7 +191,7 @@ while True:
     elif ans.startswith("search"):
         search_keyword = ans.split()[1]
         print("Searching for '", search_keyword, "'")
-        time.sleep(1)
+        time.sleep(t_sleep)
         if bodies.str.contains(search_keyword).any():
             chosen = jokes[bodies.str.contains(search_keyword)]
             rand = randint(0, len(chosen))
@@ -170,7 +205,7 @@ while True:
         print("\nOne hilarious joke, coming right away")
         probs = stats["score"]/stats["score"].sum()
         category = choices(categories, probs)[0]
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("\nChosen category -->", category)
         joke = returnJokeBasedOnCategory(jokes, category)
         jokes = handleJoke(jokes, joke)
@@ -186,26 +221,27 @@ while True:
         print("\nStats reset done\n")
     elif containsWord("hey", ans.lower()) or containsWord("hello", ans.lower()) or containsWord("hi", ans.lower()) or containsWord("greetings", ans.lower()):
         print("\nGreetings, ", user)
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("Are you ready for the best joke of your life?\n")
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("Go on, ask me for a joke\n")
     elif containsWord("jokybo", ans.lower()):
         print("\nDid you call my name?")
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("Nobody has ever called me by my name in such a long time...")
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("Just kidding :)")
-        time.sleep(1)
+        time.sleep(t_sleep)
         print("Or am I?\n")
-    elif ans == "exit":
+    elif ans == "bye":
         print("\nBoo\n")
         break
     else:
-        print("\nI don't have the answer for that, unfortunately\n")
+        print("\nI don't have the answer for that, unfortunately")
 
 
 stats = calculatePercentage(stats)
+
 
 print("Saving your jokes preferences...")
 jokes.to_csv(f"./stats/{user}/{user}-remaining-jokes.csv", index=False)
